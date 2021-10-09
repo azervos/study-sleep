@@ -1,0 +1,217 @@
+ main.c
+//  C Program
+//
+//  Created by user name on 1/15/20.
+//  Copyright © 2020 user name. All rights reserved.
+//
+
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <time.h>
+struct Attribute {
+    int value ;
+    char* name;
+    
+};
+
+struct Card {
+    struct    Attribute attribute1;
+    struct    Attribute attribute2;
+};
+
+struct Player {
+    bool isHuman;
+    char* name;
+    struct Card* deck;
+    int numberOfCards;
+};
+struct Card* createDeck(){                           //not quite an error
+    srand(time(NULL));
+    struct Card* deck = malloc(9 * sizeof(struct Card)) ;
+    for (int i=0; i < 9; i++) {
+        deck[i].attribute1.name = "dull";
+        deck[i].attribute1.value = rand() % 10;
+        deck[i].attribute2.name = "shiny";
+        deck[i].attribute2.value = rand() % 10;
+       
+    }
+    
+    return deck;
+}                                                //came across an issue where the computer had the same card value as human, had to create a new function for the computer and use i instead of random
+    
+struct Card* createDeckForComputer(){
+    srand(time(NULL));
+    struct Card* deck = malloc(9 * sizeof(struct Card)) ;
+    for (int i=0; i < 9; i++) {
+        deck[i].attribute1.name = "dull";
+        deck[i].attribute1.value = i;
+        deck[i].attribute2.name = "shiny";
+        deck[i].attribute2.value = i;
+       
+    }
+    return deck;
+    
+}
+void printPlayerInfo(struct Player* player){
+    printf("name: %s\n",player->name);
+    printf("number of cards: %d\n",player->numberOfCards);
+}
+bool playRound(struct Player* human,struct Player* computer, bool useFirstAttribute){
+    int humanCardValue;
+    int computerCardValue;
+    if (useFirstAttribute){
+        humanCardValue =human->deck[0].attribute1.value;
+        computerCardValue =computer->deck[0].attribute1.value;
+    }
+    else{
+        humanCardValue =human->deck[0].attribute2.value;
+        computerCardValue =computer->deck[0].attribute2.value;
+    }
+        
+    printf("Player's Card Value: %d\n",humanCardValue);
+    printf("Computer's Card Value: %d\n",computerCardValue);
+    if (humanCardValue >= computerCardValue){
+        human->numberOfCards += 1;
+        computer->numberOfCards -= 1;
+        human->deck=realloc(human->deck,sizeof(struct Card)*human->numberOfCards);
+        struct Card* temp;
+        for (int i=0; i< human->numberOfCards; i++){
+           if(i == 0){
+               temp = &human->deck[0];
+           }
+            human->deck[i]=human->deck[i+1];
+        }
+        human->deck[human->numberOfCards -1 ] = computer->deck[0];
+        human->deck[human->numberOfCards -2 ] = *temp;
+        for (int i=0; i< computer->numberOfCards; i++){
+            computer->deck[i]=computer->deck[i+1];
+        }
+        computer->deck=realloc(computer->deck,sizeof(struct Card)*computer->numberOfCards);
+        printf("%s Wins The Round!!!!!!!!!!!!!!!!!!\n",human->name);
+        printPlayerInfo(human);
+        printPlayerInfo(computer);
+        return true ;
+    }
+    else if(humanCardValue < computerCardValue){
+        computer->numberOfCards += 1;
+        human->numberOfCards -= 1;
+        computer->deck=realloc(computer->deck,sizeof(struct Card)*computer->numberOfCards);
+        struct Card* temp;
+        for (int i=0; i< computer->numberOfCards; i++){
+           if(i == 0){
+               temp = &computer->deck[0];
+           }
+            computer->deck[i]=computer->deck[i+1];
+        }
+        computer->deck[computer->numberOfCards -1 ] = human->deck[0];//temp is used as a placeholder
+        computer->deck[computer->numberOfCards -2 ] = *temp;
+        for (int i=0; i< human->numberOfCards; i++){
+            human->deck[i]=human->deck[i+1];
+        }
+        human->deck=realloc(human->deck,sizeof(struct Card)*human->numberOfCards);
+        printf("%s Wins The Round!!!!!!!!!!!!!!!!!!\n",computer->name);
+        printPlayerInfo(human);
+        printPlayerInfo(computer);
+        return false;
+        
+    }
+
+    else{
+        return false;
+        
+    }
+}
+
+struct Player * playGame(struct Player* human,struct Player* computer,bool isPredictable)
+    {
+    printPlayerInfo(human);
+    printPlayerInfo(computer);
+    
+    bool isHumanTurn = true;
+    while (true){
+        printf("\n");
+        if (human->numberOfCards==0){
+            return computer;
+            
+        }
+        else if (computer->numberOfCards==0){
+            return human;
+        }
+        
+        if (isHumanTurn){
+            printf("Current Player: %s\n", human->name);
+            printf("Attribute #1 of Card: %s\n", human->deck[0].attribute1.name);
+            printf("Card Value #1: %d\n", human->deck[0].attribute1.value);
+            printf("Attribute #2 of Card: %s\n", human->deck[0].attribute2.name);
+            printf("Card Value #2: %d\n", human->deck[0].attribute2.value);
+            printf("What attribute would you like to play?(options:dull,shiny)");
+            char attribute[20];
+            scanf("%s",attribute); //this is asking to be included in the header
+            if(strcmp(attribute, "dull")==0){
+                isHumanTurn =playRound(human,computer,true);
+                
+            }
+            else if(strcmp(attribute, "shiny")==0){
+                isHumanTurn =playRound(human,computer,false);
+            }
+            
+           
+        } else{
+            printf("Current Player: %s\n", computer->name);
+            printf("Attribute #1 of Card: %s\n", computer->deck[0].attribute1.name);
+            printf("Card Value #1: %d\n", human->deck[0].attribute1.value);
+            printf("Attribute #2 of Card: %s\n", computer->deck[0].attribute2.name);
+            printf("Card Value #2: %d\n", computer->deck[0].attribute2.value);
+            if (isPredictable){
+                isHumanTurn =playRound(human,computer,true);
+            }
+            else {
+                isHumanTurn =playRound(human,computer,rand() & 1);
+            }
+            
+            
+        }
+        
+        
+        
+    }
+    return NULL ;
+}
+
+
+
+                      
+int main() {
+    
+    struct Player human ;
+    struct Player computer;
+    human.isHuman = true ;
+    human.name = (char*)malloc(50);
+    human.deck = createDeck();
+    human.numberOfCards = 9;
+    computer.isHuman = false;
+    computer.name = "Robot";
+    computer.deck = createDeckForComputer();
+    computer.numberOfCards = 9;
+    
+    
+    printf("%s\n", "Enter name for Player");
+    scanf("%s", human.name );
+    char gameType[20];
+    printf("%s\n", "Would you like to play against a Predictable or Random opponent?");
+    scanf("%s", gameType);
+    
+    if(strcmp(gameType, "Random")==0){  //the simplest way I could find to create a random and a predictable computer
+    playGame(&human,&computer,false);
+        
+    }
+    else if(strcmp(gameType, "Predictable")==0){
+        playGame(&human,&computer,true);
+    }
+    
+    
+   
+return 0;
+}
+
